@@ -15,11 +15,23 @@ public class Server
                 Socket clientSocket = serverSocket.accept();
                 InputStreamReader inputReader = new InputStreamReader(clientSocket.getInputStream());
                 BufferedReader reader = new BufferedReader(inputReader);
+
+                String httpRequest = reader.readLine();
+
+                String[] splitRequest = httpRequest.split(" ");
+
+                if(splitRequest[0].equals("GET"))
+                {
+                    System.out.println("C'est un GET");
+                    System.out.println("Il veut " + splitRequest[1]);
+                }
+
+
                 String line = reader.readLine();
+
 
                 while(!line.isEmpty())
                 {
-                    System.out.println(line);
                     line = reader.readLine();
                 }
 
