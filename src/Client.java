@@ -1,4 +1,4 @@
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -13,11 +13,19 @@ public class Client
         boolean isConnected = true;
         String msg;
 
+        //Streams et buffers
+        DataInputStream inClient;
+        DataOutputStream outClient;
+        BufferedInputStream bufferIn;
+        BufferedOutputStream bufferOut;
+
+        //Socket et adresses
         Socket socketClient;
         InetAddress localAdress;
         InetAddress serveurAdress;
 
-        String nomAdresseServeur = "www.facebook.com";
+        //"http://192.168.43.4/";
+        String nomAdresseServeur = "192.168.43.4";
 
         //region Attribution des adresses
         try {
@@ -45,6 +53,55 @@ public class Client
         }
         //endregion
 
+        //region get Input/Output Streams
+        try {
+            inClient = new DataInputStream(socketClient.getInputStream());
+            bufferIn = new BufferedInputStream(inClient);
+            outClient = new DataOutputStream(socketClient.getOutputStream());
+            bufferOut = new BufferedOutputStream(outClient);
+        }
+        catch (IOException err) {
+            System.out.println("Erreur création In/Out Streams !");
+            err.printStackTrace();
+            return;
+        }
+        //endregion
+
+        msg = "Salut?";
+
+        /*
+        while (isConnected) {
+
+            try {
+                outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\n");
+                outClient.flush();
+                System.out.println("Message envoyé!");
+
+            }
+            catch (IOException err) {
+                System.out.println("Erreur envoie GET");
+                err.printStackTrace();
+            }
+
+
+        } */
+
+
+        try {
+            outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\n");
+            outClient.flush();
+            System.out.println("Message envoyé!");
+
+        }
+        catch (IOException err) {
+            System.out.println("Erreur envoie GET");
+            err.printStackTrace();
+        }
+
+        //inClient.read();
+
+        //region boucle simple
+        /*
         while (isConnected) {
 
             System.out.println("Entrez un message...");
@@ -57,6 +114,8 @@ public class Client
             }
 
         }
+        */
+        //endregion
 
         //region Fermeture scanner et socket
         System.out.println("Arrêt du client...");
@@ -69,6 +128,7 @@ public class Client
             System.out.println("ERREUR fermeture Socket Client");
             err.printStackTrace();
         }
+        //endregion
 
 
     }
