@@ -22,6 +22,7 @@ public class Server
                     System.out.println(line);
                     line = reader.readLine();
                 }
+
             }
         }
         catch(Exception e)
