@@ -9,7 +9,7 @@ public class Server
         try
         {
             ServerSocket serverSocket = new ServerSocket(80);
-
+            System.out.println("Serveur démarré ! En attente de clients...");
 
             Socket clientSocket = serverSocket.accept();
             System.out.println("New connection accepted " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
@@ -21,6 +21,7 @@ public class Server
 
                 //on récupère la première ligne c'est celle qui contient la méthode
                 String httpRequest = reader.readLine();
+                //System.out.println("HTTP REQUEST FULL : "+ httpRequest);
 
                 //On la sépare pour analyser la méthode
                 String[] splitRequest = httpRequest.split(" ");
@@ -28,32 +29,38 @@ public class Server
                 //Si c'est un GET
                 if(splitRequest[0].equals("GET"))
                 {
-                    System.out.println("C'est un GET");
-                    System.out.println("Il veut " + splitRequest[1]);
+                    System.out.println("Requête GET reçu, fichier demandé : " + splitRequest[1]);
 
                     try {
-                        File fichier = new File(splitRequest[1]);
+                        File fichier = new File("toSend/" + splitRequest[1]);
 
                         if(fichier.canRead())
                         {
-                            byte [] mybytearray  = new byte [(int)fichier.length()];
+                            //On lit l'entièreté du fichier qu'on enregistre dans un buffer.
+                            byte [] fileBytes  = new byte [(int)fichier.length()];
 
                             FileInputStream fis = new FileInputStream(fichier);
                             BufferedInputStream bis = new BufferedInputStream(fis);
 
-                            bis.read(mybytearray, 0, mybytearray.length);
+                            bis.read(fileBytes, 0, fileBytes.length);
 
-                            OutputStream os = clientSocket.getOutputStream();
+                            //On va envoyer tout ce qu'on a lu vers le client.
 
-                            System.out.println("Sending " + splitRequest[1] + "(" + mybytearray.length + " bytes)");
-                            os.write(mybytearray, 0, mybytearray.length);
-                            os.flush();
+                            //OutputStream os = clientSocket.getOutputStream();
 
-                            System.out.println("Done.");
+                            OutputStream clientOut = clientSocket.getOutputStream();
+
+                            System.out.println("Sending " + splitRequest[1] + "(" + fileBytes.length + " bytes)");
+                            clientOut.write(fileBytes, 0, fileBytes.length);
+                            clientOut.flush();
+
+                            System.out.println("Fichier envoyé.");
+
                         }
                         else
                         {
-                            String httpResponse = "HTTP/1.1 418 Error\r\nError 418 I'm a teapot\r\n" + "Fichier introuvable connard";
+                            System.out.println("Fichier introuvable!");
+                            String httpResponse = "HTTP/1.1 418 Error\r\nFichier introuvable!";
                             clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
                             clientSocket.getOutputStream().flush();
                         }

@@ -26,7 +26,8 @@ public class Client
 
         //"http://192.168.43.4/";
         //Adresse fabien : "192.168.43.4"
-        String nomAdresseServeur = "192.168.43.4";
+        //String nomAdresseServeur = "192.168.43.4";
+        String nomAdresseServeur = "127.0.0.1";
 
         //region Initialisation
         try {
@@ -65,39 +66,71 @@ public class Client
 
 
             //On écrit le msg à envoyer
-            System.out.println("Entrez un message...");
+            System.out.println("Entrez le nom du fichier à télécharger");
             msg = sc.nextLine();
 
             //System.out.println(msg);
 
-            //Envoie
+            //Envoi
             try {
                 outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\r\n");
                 outClient.flush();
-                System.out.println("Message envoyé!");
+                System.out.println("Requête envoyée!");
 
             }
             catch (IOException err) {
-                System.out.println("Erreur envoie GET");
+                System.out.println("Erreur envoi de la requête !");
                 err.printStackTrace();
             }
 
             //Reception
             try {
-                msg = inClient.readLine();
-                System.out.println("Réponse reçue : \'" + msg + "\'");
+
+                //On prépare une large zone de buffer pour recevoir le fichier
+                byte [] fileBytes = new byte[6022386];
+
+                //On prépare les Stream pour la réception
+                InputStream clientIn = socketClient.getInputStream();
+                FileOutputStream fos = new FileOutputStream("received/" + msg);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+
+                int bytesRead, current;
+                //On lit tout.
+                bytesRead = clientIn.read(fileBytes,0,fileBytes.length);
+                current = bytesRead;
+
+                //System.out.println("bytesRead = " + bytesRead + ", current = " + current);
+
+                /*
+                do {
+                    bytesRead = clientIn.read(fileBytes, current, (fileBytes.length-current));
+                    System.out.println("bytesRead = " + bytesRead + ", current = " + current);
+                    if (bytesRead >= 0)
+                        current += bytesRead;
+                } while(bytesRead > -1); */
+
+                bos.write(fileBytes, 0 , current);
+                bos.flush();
+                System.out.println("File " + msg + " downloaded (" + current + " bytes read)");
+
+                //msg = inClient.readLine();
+                //System.out.println("Réponse reçue : \'" + msg + "\'");
+
             }
             catch (IOException err) {
                 System.out.println("Erreur reception !");
                 err.printStackTrace();
             }
 
+            System.out.println("\n  Fin Reception ---");
+
             //Arrêt de la connexion si le msg = "quit"
-            if ( msg.equals("quit")) {
+            /*if ( msg.equals("quit")) {
                 isConnected = false;
-            }
+            }*/
 
 
+            isConnected = false;
         }
 
         //region Fermeture scanner et socket
@@ -112,7 +145,6 @@ public class Client
             err.printStackTrace();
         }
         //endregion
-
 
     }
 
