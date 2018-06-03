@@ -61,76 +61,72 @@ public class Client
         //endregion Initialisation
 
 
+        //On écrit le msg à envoyer
+        System.out.println("Entrez le nom du fichier à télécharger");
+        msg = sc.nextLine();
 
-        while (isConnected) {
+        //System.out.println(msg);
 
+        //Envoi
+        try {
+            outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\r\n");
+            outClient.flush();
+            System.out.println("Requête envoyée!");
 
-            //On écrit le msg à envoyer
-            System.out.println("Entrez le nom du fichier à télécharger");
-            msg = sc.nextLine();
+        }
+        catch (IOException err) {
+            System.out.println("Erreur envoi de la requête !");
+            err.printStackTrace();
+        }
 
-            //System.out.println(msg);
+        //Reception
+        try {
 
-            //Envoi
-            try {
-                outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\r\n");
-                outClient.flush();
-                System.out.println("Requête envoyée!");
+            //On prépare une large zone de buffer pour recevoir le fichier
+            byte [] fileBytes = new byte[6022386];
 
-            }
-            catch (IOException err) {
-                System.out.println("Erreur envoi de la requête !");
-                err.printStackTrace();
-            }
+            //On prépare les Stream pour la réception
+            InputStream clientIn = socketClient.getInputStream();
+            FileOutputStream fos = new FileOutputStream("received/" + msg);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
 
-            //Reception
-            try {
+            int bytesRead, current;
+            //On lit tout.
+            bytesRead = clientIn.read(fileBytes,0, fileBytes.length);
+            current = bytesRead;
 
-                //On prépare une large zone de buffer pour recevoir le fichier
-                byte [] fileBytes = new byte[6022386];
+            //System.out.println("bytesRead = " + bytesRead + ", current = " + current);
 
-                //On prépare les Stream pour la réception
-                InputStream clientIn = socketClient.getInputStream();
-                FileOutputStream fos = new FileOutputStream("received/" + msg);
-                BufferedOutputStream bos = new BufferedOutputStream(fos);
+            /*
+            do {
+                bytesRead = clientIn.read(fileBytes, current, (fileBytes.length-current));
+                System.out.println("bytesRead = " + bytesRead + ", current = " + current);
+                if (bytesRead >= 0)
+                    current += bytesRead;
+            } while(bytesRead > -1); */
 
-                int bytesRead, current;
-                //On lit tout.
-                bytesRead = clientIn.read(fileBytes,0,fileBytes.length);
-                current = bytesRead;
+            bos.write(fileBytes, 0 , current);
+            bos.flush();
+            System.out.println("Fichier " + msg + " téléchargé (" + current + " octets lues)");
 
-                //System.out.println("bytesRead = " + bytesRead + ", current = " + current);
+            //msg = inClient.readLine();
+            //System.out.println("Réponse reçue : \'" + msg + "\'");
 
-                /*
-                do {
-                    bytesRead = clientIn.read(fileBytes, current, (fileBytes.length-current));
-                    System.out.println("bytesRead = " + bytesRead + ", current = " + current);
-                    if (bytesRead >= 0)
-                        current += bytesRead;
-                } while(bytesRead > -1); */
-
-                bos.write(fileBytes, 0 , current);
-                bos.flush();
-                System.out.println("File " + msg + " downloaded (" + current + " bytes read)");
-
-                //msg = inClient.readLine();
-                //System.out.println("Réponse reçue : \'" + msg + "\'");
-
-            }
-            catch (IOException err) {
-                System.out.println("Erreur reception !");
-                err.printStackTrace();
-            }
-
-            System.out.println("\n  Fin Reception ---");
-
-            //Arrêt de la connexion si le msg = "quit"
-            /*if ( msg.equals("quit")) {
-                isConnected = false;
-            }*/
+        }
+        catch (IOException err) {
+            System.out.println("Erreur reception !");
+            err.printStackTrace();
+        }
 
 
-            isConnected = false;
+        try {
+            outClient.writeBytes("quit");
+            outClient.flush();
+        }
+        catch (IOException err) {
+            System.out.println("Erreur requête terminaison connexion !");
+            err.printStackTrace();
+            return;
         }
 
         //region Fermeture scanner et socket
