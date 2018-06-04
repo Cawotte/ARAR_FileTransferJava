@@ -61,7 +61,7 @@ public class Server
                 System.out.println("Requête GET reçu, fichier demandé : " + splitRequest[1]);
 
                 try {
-                    File fichier = new File("toSend/" + splitRequest[1]);
+                    File fichier = new File(splitRequest[1]);
 
                     if(fichier.canRead())
                     {
@@ -77,6 +77,8 @@ public class Server
                         OutputStream clientOut = clientSocket.getOutputStream();
 
                         System.out.println("Envoi du fichier " + splitRequest[1] + "(" + fileBytes.length + " octets)");
+                        String httpResponse = "HTTP/1.1 200 OK\r\n";
+                        clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
                         clientOut.write(fileBytes, 0, fileBytes.length);
                         clientOut.flush();
 
@@ -100,7 +102,38 @@ public class Server
 
                 System.out.println("En attente d'une nouvelle requête...");
             }
-            else if ( splitRequest != null && splitRequest[0].equals("quit") ) {
+
+            if(splitRequest[0].equals("PUT"))
+            {
+                //On prépare une large zone de buffer pour recevoir le fichier
+                byte [] fileBytes = new byte[6022386];
+
+                try
+                {
+                    //On prépare les Stream pour la réception
+                    InputStream clientIn = clientSocket.getInputStream();
+                    FileOutputStream fos = new FileOutputStream(splitRequest[1]);
+                    BufferedOutputStream bos = new BufferedOutputStream(fos);
+
+                    int bytesRead, current;
+                    //On lit tout.
+                    bytesRead = clientIn.read(fileBytes,0,fileBytes.length);
+                    current = bytesRead;
+
+                    bos.write(fileBytes, 0 , current);
+                    bos.flush();
+
+                    String httpResponse = "HTTP/1.1 200 OK\r\n";
+                    clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
+                    clientSocket.getOutputStream().flush();
+                }
+                catch(Exception e)
+                {
+                    System.out.println(e);
+                }
+            }
+
+            if ( splitRequest != null && splitRequest[0].equals("quit") ) {
 
                 System.out.println("Arrêt de la connexion avec le client...");
                 try {

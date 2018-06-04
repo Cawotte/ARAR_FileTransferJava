@@ -7,7 +7,8 @@ import java.util.Scanner;
 public class Client
 {
 
-    public static void main(String[] argc) {
+    public static void main(String[] argc)
+    {
 
         Scanner sc = new Scanner(System.in);
         boolean isConnected = true;
@@ -60,73 +61,37 @@ public class Client
         }
         //endregion Initialisation
 
+        while(isConnected)
+        {
+            System.out.println("Entrez votre requête");
+            msg = sc.nextLine();
+            System.out.println(msg);
 
-        //On écrit le msg à envoyer
-        System.out.println("Entrez le nom du fichier à télécharger");
-        msg = sc.nextLine();
+            try {
+                String[] message = msg.split(" ");
+                System.out.println(message[1]);
+                if(message[0].equals("GET"))
+                    get(outClient,message[1], socketClient);
+                if(message[0].equals("PUT"))
+                    put(outClient, message[1], socketClient);
+                if(message[0].equals("quit"))
+                {
+                    try {
+                        outClient.writeBytes("quit");
+                        outClient.flush();
+                    }
+                    catch (IOException err) {
+                        System.out.println("Erreur requête terminaison connexion !");
+                        err.printStackTrace();
+                        return;
+                    }
+                }
 
-        //System.out.println(msg);
-
-        //Envoi
-        try {
-            outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\r\n");
-            outClient.flush();
-            System.out.println("Requête envoyée!");
-
-        }
-        catch (IOException err) {
-            System.out.println("Erreur envoi de la requête !");
-            err.printStackTrace();
-        }
-
-        //Reception
-        try {
-
-            //On prépare une large zone de buffer pour recevoir le fichier
-            byte [] fileBytes = new byte[6022386];
-
-            //On prépare les Stream pour la réception
-            InputStream clientIn = socketClient.getInputStream();
-            FileOutputStream fos = new FileOutputStream("received/" + msg);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-
-            int bytesRead, current;
-            //On lit tout.
-            bytesRead = clientIn.read(fileBytes,0, fileBytes.length);
-            current = bytesRead;
-
-            //System.out.println("bytesRead = " + bytesRead + ", current = " + current);
-
-            /*
-            do {
-                bytesRead = clientIn.read(fileBytes, current, (fileBytes.length-current));
-                System.out.println("bytesRead = " + bytesRead + ", current = " + current);
-                if (bytesRead >= 0)
-                    current += bytesRead;
-            } while(bytesRead > -1); */
-
-            bos.write(fileBytes, 0 , current);
-            bos.flush();
-            System.out.println("Fichier " + msg + " téléchargé (" + current + " octets lues)");
-
-            //msg = inClient.readLine();
-            //System.out.println("Réponse reçue : \'" + msg + "\'");
-
-        }
-        catch (IOException err) {
-            System.out.println("Erreur reception !");
-            err.printStackTrace();
-        }
-
-
-        try {
-            outClient.writeBytes("quit");
-            outClient.flush();
-        }
-        catch (IOException err) {
-            System.out.println("Erreur requête terminaison connexion !");
-            err.printStackTrace();
-            return;
+            }
+            catch (IOException err) {
+                System.out.println("Erreur envoi de la requête !");
+                err.printStackTrace();
+            }
         }
 
         //region Fermeture scanner et socket
@@ -141,8 +106,78 @@ public class Client
             err.printStackTrace();
         }
         //endregion
-
     }
 
+    public static void get(DataOutputStream outClient, String msg, Socket socketClient) throws IOException
+    {
+        //Envoi
+        try {
+            outClient.writeBytes("GET " + msg + " HTTP/1.1\r\n\r\n");
+            outClient.flush();
+            System.out.println("Requête envoyée!");
 
+        }
+        catch (IOException err) {
+            System.out.println("Erreur envoi de la requête !");
+            err.printStackTrace();
+        }
+
+        //Reception
+        try {
+            //On prépare une large zone de buffer pour recevoir le fichier
+            byte [] fileBytes = new byte[6022386];
+
+            //On prépare les Stream pour la réception
+            InputStream clientIn = socketClient.getInputStream();
+            FileOutputStream fos = new FileOutputStream("received/" + msg);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+
+            int bytesRead, current;
+            //On lit tout.
+            bytesRead = clientIn.read(fileBytes,0, fileBytes.length);
+            current = bytesRead;
+
+            bos.write(fileBytes, 0 , current);
+            bos.flush();
+            System.out.println("Fichier " + msg + " téléchargé (" + current + " octets lues)");
+        }
+        catch (IOException err) {
+            System.out.println("Erreur reception !");
+            err.printStackTrace();
+        }
+    }
+
+    public static void put(DataOutputStream outClient, String fic, Socket socketClient) throws IOException
+    {
+
+        File fichier = new File(fic);
+
+        if(fichier.canRead())
+        {
+            byte [] fileBytes  = new byte [(int)fichier.length()];
+
+            FileInputStream fis = new FileInputStream(fichier);
+            BufferedInputStream bis = new BufferedInputStream(fis);
+
+            bis.read(fileBytes, 0, fileBytes.length);
+            outClient.writeBytes("PUT " + fic + " HTTP/1.1\r\n");
+
+            outClient.write(fileBytes, 0, fileBytes.length);
+            System.out.println(outClient.size());
+            outClient.flush();
+            System.out.println("DONE");
+
+            InputStream clientIn = socketClient.getInputStream();
+            InputStreamReader inputReader = new InputStreamReader(clientIn);
+            BufferedReader reader = new BufferedReader(inputReader);
+            String reponse = reader.readLine();
+            String[] reponseSplit = reponse.split(" ");
+            if (reponseSplit[1].equals("200"))
+            {
+                System.out.println("Transfert r궳si");
+            }
+        }
+        else
+            System.out.println("fichier introuvable");
+    }
 }
