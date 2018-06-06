@@ -110,6 +110,8 @@ public class Server
 
                 try
                 {
+                    //region old
+                    /*
                     //On prépare les Stream pour la réception
                     InputStream clientIn = clientSocket.getInputStream();
                     FileOutputStream fos = new FileOutputStream(splitRequest[1]);
@@ -121,7 +123,30 @@ public class Server
                     current = bytesRead;
 
                     bos.write(fileBytes, 0 , current);
-                    bos.flush();
+                    bos.flush(); */
+                    //endregion
+
+                    int bytesRead;
+                    int totalBytesRead = 0;
+                    InputStream clientIn = clientSocket.getInputStream();
+                    FileOutputStream fos = new FileOutputStream(splitRequest[1]);
+
+                    //On lira dans le stream par coup de 1024 octets.
+                    byte[] buffer = new byte[1024];
+
+                    do {
+                        bytesRead = clientIn.read(buffer); //On lit le stream et on compte le nombre d'octets lues.
+                        totalBytesRead += bytesRead;
+                        //System.out.println("bytesRead = " + bytesRead); //Debug
+                        fos.write(buffer, 0, bytesRead); //On écrit ce qu'on a lue dans le fichier.
+
+                        //Tant que le buffer est plein, il y a encore du contenu à lire ! On boucle donc.
+                    } while ( bytesRead != -1 && bytesRead == buffer.length );
+
+
+                    System.out.println("Fichier " + splitRequest[1] + " téléchargé ! (" + totalBytesRead + " octets lues)");
+
+                    fos.close();
 
                     String httpResponse = "HTTP/1.1 200 OK\r\n";
                     clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));

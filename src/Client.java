@@ -177,31 +177,33 @@ public class Client
     public static void put(DataOutputStream outClient, String fic, Socket socketClient) throws IOException
     {
 
-        File fichier = new File(fic);
+        File fichier = new File("toSend/" + fic);
 
         if(fichier.canRead())
         {
             byte [] fileBytes  = new byte [(int)fichier.length()];
 
+            //On prépare les Stream.
             FileInputStream fis = new FileInputStream(fichier);
             BufferedInputStream bis = new BufferedInputStream(fis);
 
             bis.read(fileBytes, 0, fileBytes.length);
-            outClient.writeBytes("PUT " + fic + " HTTP/1.1\r\n");
+            outClient.writeBytes("PUT " + fic + " HTTP/1.1\r\n\r\n");
 
             outClient.write(fileBytes, 0, fileBytes.length);
-            System.out.println(outClient.size());
+            System.out.println( (outClient.size() - ("PUT " + fic + " HTTP/1.1\r\n\r\n").getBytes().length) + " octets envoyés.");
             outClient.flush();
-            System.out.println("DONE");
+            System.out.println("Fichier envoyé !");
 
             InputStream clientIn = socketClient.getInputStream();
             InputStreamReader inputReader = new InputStreamReader(clientIn);
             BufferedReader reader = new BufferedReader(inputReader);
             String reponse = reader.readLine();
+            //System.out.println("réponse serveur : " + reponse);
             String[] reponseSplit = reponse.split(" ");
             if (reponseSplit[1].equals("200"))
             {
-                System.out.println("Transfert r궳si");
+                System.out.println("Transfert réussi ! (Accusé de réception reçu)");
             }
         }
         else
