@@ -124,6 +124,8 @@ public class Client
 
         //Reception
         try {
+            //region old
+            /*
             //On prépare une large zone de buffer pour recevoir le fichier
             byte [] fileBytes = new byte[6022386];
 
@@ -139,7 +141,32 @@ public class Client
 
             bos.write(fileBytes, 0 , current);
             bos.flush();
-            System.out.println("Fichier " + msg + " téléchargé (" + current + " octets lues)");
+            System.out.println("Fichier " + msg + " téléchargé (" + current + " octets lues)");*/
+            //endregion
+
+            int bytesRead;
+            int totalBytesRead = 0;
+            InputStream clientIn = socketClient.getInputStream();
+            FileOutputStream fos = new FileOutputStream("received/" + msg);
+
+            //On lira dans le stream par coup de 1024 octets.
+            byte[] buffer = new byte[1024];
+
+            clientIn.read(buffer, 0, 17); //On ignore les 17 octets du header
+
+            do {
+                bytesRead = clientIn.read(buffer); //On lit le stream et on compte le nombre d'octets lues.
+                totalBytesRead += bytesRead;
+                //System.out.println("bytesRead = " + bytesRead); //Debug
+                fos.write(buffer, 0, bytesRead); //On écrit ce qu'on a lue dans le fichier.
+
+                //Tant que le buffer est plein, il y a encore du contenu à lire ! On boucle donc.
+            } while ( bytesRead != -1 && bytesRead == buffer.length );
+
+
+            System.out.println("Fichier " + msg + " téléchargé ! (" + totalBytesRead + " octets lues)");
+
+            fos.close();
         }
         catch (IOException err) {
             System.out.println("Erreur reception !");

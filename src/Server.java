@@ -61,7 +61,7 @@ public class Server
                 System.out.println("Requête GET reçu, fichier demandé : " + splitRequest[1]);
 
                 try {
-                    File fichier = new File(splitRequest[1]);
+                    File fichier = new File("toSend/" + splitRequest[1]);
 
                     if(fichier.canRead())
                     {
